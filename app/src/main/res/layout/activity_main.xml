@@ -12,11 +12,22 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Media Player"
-        app:layout_constraintBottom_toTopOf="@+id/btnPlay"
+        app:layout_constraintBottom_toTopOf="@+id/btnAddTrack"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.704" />
+
+    <Button
+        android:id="@+id/btnAddTrack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="40dp"
+        android:text="Adicionar Faixa"
+        app:layout_constraintBottom_toTopOf="@+id/btnPlay"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <Button
         android:id="@+id/btnPlay"
@@ -44,7 +55,7 @@
         android:id="@+id/btnStop"
         android:layout_width="109dp"
         android:layout_height="61dp"
-        android:layout_marginBottom="312dp"
+        android:layout_marginBottom="236dp"
         android:text="Stop"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
