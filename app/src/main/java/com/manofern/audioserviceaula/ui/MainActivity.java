@@ -1,10 +1,9 @@
-package com.manofern.audioserviceaula;
+package com.manofern.audioserviceaula.ui;
 
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 
 import androidx.activity.EdgeToEdge;
@@ -13,6 +12,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import com.manofern.audioserviceaula.AudioService;
+import com.manofern.audioserviceaula.R;
 
 public class MainActivity extends AppCompatActivity {
 
