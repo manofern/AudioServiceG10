@@ -13,7 +13,7 @@ import android.os.Build;
 import android.os.IBinder;
 
 import androidx.annotation.Nullable;
-
+import androidx.core.app.NotificationCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 
 import java.util.Objects;
@@ -23,7 +23,6 @@ public class AudioService extends Service {
     private MediaPlayer mediaPlayer;
     private AudioManager audioManager;
     private MediaSessionCompat mediaSession;
-    private Notification notification;
     private int currentPosition = 0;
 
     private static final String CHANNEL_ID = "AudioServiceChannel";
@@ -33,13 +32,12 @@ public class AudioService extends Service {
         super.onCreate();
         mediaPlayer = new MediaPlayer();
         audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-        mediaSession = new MediaSessionCompat(this,"AudioService");
+        mediaSession = new MediaSessionCompat(this, "AudioService");
 
         createNotificationChannel();
 
-        notification = createNotification();
-
-        startForeground(1,notification);
+        // Cria a notificação inicial e inicia em primeiro plano
+        updateNotification("Aguardando reprodução");
     }
 
     @Override
@@ -50,19 +48,14 @@ public class AudioService extends Service {
             String action = intent.getAction();
 
             switch (Objects.requireNonNull(action)) {
-                case "PLAY": {
+                case "PLAY":
                     playAudio(intent.getStringExtra("path"));
                     break;
-                }
-                case "PAUSE": {
+                case "PAUSE":
                     pauseAudio();
                     break;
-                }
-                case "STOP": {
+                case "STOP":
                     stopAudio();
-                    break;
-                }
-                default:
                     break;
             }
         }
@@ -70,63 +63,72 @@ public class AudioService extends Service {
         return START_STICKY;
     }
 
-    private void playAudio(String uriString){
+    private void playAudio(String uriString) {
         try {
             mediaPlayer.reset();
             mediaPlayer.setDataSource(this, Uri.parse(uriString));
             mediaPlayer.prepare();
 
-            if (currentPosition > 0){
+            if (currentPosition > 0) {
                 mediaPlayer.seekTo(currentPosition); // Retoma onde parou
             }
 
             mediaPlayer.start();
-        } catch(Exception e){
+            updateNotification("Reproduzindo música");
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void pauseAudio(){
-        if (mediaPlayer.isPlaying())
-            currentPosition = mediaPlayer.getCurrentPosition(); // Salva a posicao atual
+    private void pauseAudio() {
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            currentPosition = mediaPlayer.getCurrentPosition(); // Salva a posição atual
             mediaPlayer.pause();
+            updateNotification("Música pausada");
+        }
     }
 
-    private void stopAudio(){
-        mediaPlayer.stop();
+    private void stopAudio() {
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+        }
         stopForeground(true);
         stopSelf();
-
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mediaPlayer.release();
-        mediaPlayer = null;
-        mediaSession.release();
-        mediaSession = null;
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
+        if (mediaSession != null) {
+            mediaSession.release();
+            mediaSession = null;
+        }
     }
 
-    private void createNotificationChannel(){
+    private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel serviceChannel = new NotificationChannel(
                     CHANNEL_ID,
                     "Audio Service Channel",
-                    NotificationManager.IMPORTANCE_LOW // Use LOW para notificações persistentes sem som
+                    NotificationManager.IMPORTANCE_LOW
             );
+            serviceChannel.setDescription("Canal de serviço de reprodução de áudio");
             NotificationManager manager = getSystemService(NotificationManager.class);
             manager.createNotificationChannel(serviceChannel);
         }
     }
 
-    private Notification createNotification() {
+    private void updateNotification(String statusText) {
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent contentIntent = PendingIntent.getActivity(
                 this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE
         );
 
-        // Ações da notificação
         Intent pauseIntent = new Intent(this, AudioService.class);
         pauseIntent.setAction("PAUSE");
         PendingIntent pausePendingIntent = PendingIntent.getService(
@@ -139,18 +141,22 @@ public class AudioService extends Service {
                 this, 2, stopIntent, PendingIntent.FLAG_IMMUTABLE
         );
 
-        return new Notification.Builder(this, CHANNEL_ID)
-                .setContentTitle("Reproduzindo música")
+        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(statusText)
                 .setContentText("Clique para voltar ao app")
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentIntent(contentIntent)
-                .addAction(new Notification.Action.Builder(
-                        android.R.drawable.ic_media_pause, "Pausar", pausePendingIntent).build())
-                .addAction(new Notification.Action.Builder(
-                        android.R.drawable.ic_menu_close_clear_cancel, "Parar", stopPendingIntent).build())
-                .setOngoing(true) // Notificação persistente
-                .setStyle(new Notification.MediaStyle())
+                .addAction(new NotificationCompat.Action(
+                        android.R.drawable.ic_media_pause, "Pausar", pausePendingIntent))
+                .addAction(new NotificationCompat.Action(
+                        android.R.drawable.ic_menu_close_clear_cancel, "Parar", stopPendingIntent))
+                .setOngoing(true)
+                .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
+                        .setMediaSession(mediaSession.getSessionToken()))
                 .build();
+
+        // Notifica e inicia em primeiro plano
+        startForeground(1, notification);
     }
 
     @Nullable
