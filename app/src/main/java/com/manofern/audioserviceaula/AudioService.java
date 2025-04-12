@@ -100,6 +100,7 @@ public class AudioService extends Service {
         }
     }
 
+
     private void stopAudio() {
         if (mediaPlayer != null) {
             mediaPlayer.stop();
@@ -122,6 +123,7 @@ public class AudioService extends Service {
         }
     }
 
+
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel serviceChannel = new NotificationChannel(
@@ -134,6 +136,7 @@ public class AudioService extends Service {
             manager.createNotificationChannel(serviceChannel);
         }
     }
+
 
     private void updateNotification(String statusText) {
         Intent notificationIntent = new Intent(this, MainActivity.class);
