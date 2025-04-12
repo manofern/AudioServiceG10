@@ -24,6 +24,8 @@ public class AudioService extends Service {
     private AudioManager audioManager;
     private MediaSessionCompat mediaSession;
     private int currentPosition = 0;
+    private String lastAudioPath = null;
+
 
     private static final String CHANNEL_ID = "AudioServiceChannel";
 
@@ -48,44 +50,53 @@ public class AudioService extends Service {
             String action = intent.getAction();
 
             switch (Objects.requireNonNull(action)) {
-                case "PLAY":
-                    playAudio(intent.getStringExtra("path"));
+                case "PLAY": {
+                    String path = intent.getStringExtra("path");
+                    playAudio(path); // pode ser null se vier da notificação
                     break;
-                case "PAUSE":
+                }
+                case "PAUSE": {
                     pauseAudio();
                     break;
-                case "STOP":
+                }
+                case "STOP": {
                     stopAudio();
                     break;
+                }
             }
         }
 
         return START_STICKY;
     }
 
+
     private void playAudio(String uriString) {
         try {
+            if (uriString != null) {
+                lastAudioPath = uriString;
+            }
+
             mediaPlayer.reset();
-            mediaPlayer.setDataSource(this, Uri.parse(uriString));
+            mediaPlayer.setDataSource(this, Uri.parse(lastAudioPath));
             mediaPlayer.prepare();
 
             if (currentPosition > 0) {
-                mediaPlayer.seekTo(currentPosition); // Retoma onde parou
+                mediaPlayer.seekTo(currentPosition);
             }
 
             mediaPlayer.start();
-            updateNotification("Reproduzindo música");
-
+            updateNotification("Reproduzindo...");
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+
     private void pauseAudio() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-            currentPosition = mediaPlayer.getCurrentPosition(); // Salva a posição atual
+            currentPosition = mediaPlayer.getCurrentPosition();
             mediaPlayer.pause();
-            updateNotification("Música pausada");
+            updateNotification("Pausado");
         }
     }
 
@@ -96,6 +107,7 @@ public class AudioService extends Service {
         stopForeground(true);
         stopSelf();
     }
+
 
     @Override
     public void onDestroy() {
@@ -129,33 +141,49 @@ public class AudioService extends Service {
                 this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE
         );
 
-        Intent pauseIntent = new Intent(this, AudioService.class);
-        pauseIntent.setAction("PAUSE");
-        PendingIntent pausePendingIntent = PendingIntent.getService(
-                this, 1, pauseIntent, PendingIntent.FLAG_IMMUTABLE
-        );
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(statusText)
+                .setContentText("Clique para voltar ao app")
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentIntent(contentIntent)
+                .setOngoing(true)
+                .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
+                        .setMediaSession(mediaSession.getSessionToken()));
 
+        // Ação STOP (sempre presente)
         Intent stopIntent = new Intent(this, AudioService.class);
         stopIntent.setAction("STOP");
         PendingIntent stopPendingIntent = PendingIntent.getService(
                 this, 2, stopIntent, PendingIntent.FLAG_IMMUTABLE
         );
 
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle(statusText)
-                .setContentText("Clique para voltar ao app")
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentIntent(contentIntent)
-                .addAction(new NotificationCompat.Action(
-                        android.R.drawable.ic_media_pause, "Pausar", pausePendingIntent))
-                .addAction(new NotificationCompat.Action(
-                        android.R.drawable.ic_menu_close_clear_cancel, "Parar", stopPendingIntent))
-                .setOngoing(true)
-                .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
-                        .setMediaSession(mediaSession.getSessionToken()))
-                .build();
+        // Verifica se o mediaPlayer está tocando
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            // Ação PAUSE
+            Intent pauseIntent = new Intent(this, AudioService.class);
+            pauseIntent.setAction("PAUSE");
+            PendingIntent pausePendingIntent = PendingIntent.getService(
+                    this, 1, pauseIntent, PendingIntent.FLAG_IMMUTABLE
+            );
 
-        // Notifica e inicia em primeiro plano
+            builder.addAction(new NotificationCompat.Action(
+                    android.R.drawable.ic_media_pause, "Pausar", pausePendingIntent));
+        } else {
+            // Ação PLAY
+            Intent playIntent = new Intent(this, AudioService.class);
+            playIntent.setAction("PLAY");
+            PendingIntent playPendingIntent = PendingIntent.getService(
+                    this, 3, playIntent, PendingIntent.FLAG_IMMUTABLE
+            );
+
+            builder.addAction(new NotificationCompat.Action(
+                    android.R.drawable.ic_media_play, "Reproduzir", playPendingIntent));
+        }
+
+        builder.addAction(new NotificationCompat.Action(
+                android.R.drawable.ic_menu_close_clear_cancel, "Parar", stopPendingIntent));
+
+        Notification notification = builder.build();
         startForeground(1, notification);
     }
 
