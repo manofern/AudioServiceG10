@@ -13,7 +13,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.manofern.audioserviceaula.AudioService;
+import com.manofern.audioserviceaula.services.AudioService;
 import com.manofern.audioserviceaula.R;
 
 public class MainActivity extends AppCompatActivity {
