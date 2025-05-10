@@ -3,28 +3,34 @@ package com.manofern.audioserviceaula.services;
 import android.content.Context;
 import android.media.MediaPlayer;
 import android.net.Uri;
-
 import android.support.v4.media.session.MediaSessionCompat;
 
 public class AudioPlayer {
     private final Context context;
     private final MediaPlayer mediaPlayer;
     private final MediaSessionCompat mediaSession;
-    private String lastAudioPath;
+    private Uri lastAudioUri;
     private int currentPosition = 0;
 
+    // Construtor usado na aplicação real
     public AudioPlayer(Context context) {
-        this.context = context;
-        this.mediaPlayer = new MediaPlayer();
-        this.mediaSession = new MediaSessionCompat(context, "AudioPlayer");
+        this(context, new MediaPlayer(), new MediaSessionCompat(context, "AudioPlayer"));
     }
 
-    public void play(String uriString) {
+    // Construtor para testes com mocks
+    public AudioPlayer(Context context, MediaPlayer mediaPlayer, MediaSessionCompat mediaSession) {
+        this.context = context;
+        this.mediaPlayer = mediaPlayer;
+        this.mediaSession = mediaSession;
+    }
+
+    // Método atualizado para receber Uri diretamente
+    public void play(Uri audioUri) {
         try {
-            if (uriString != null) lastAudioPath = uriString;
+            if (audioUri != null) lastAudioUri = audioUri;
 
             mediaPlayer.reset();
-            mediaPlayer.setDataSource(context, Uri.parse(lastAudioPath));
+            mediaPlayer.setDataSource(context, lastAudioUri);
             mediaPlayer.prepare();
 
             if (currentPosition > 0) {

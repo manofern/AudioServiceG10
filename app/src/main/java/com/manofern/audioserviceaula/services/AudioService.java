@@ -2,6 +2,7 @@ package com.manofern.audioserviceaula.services;
 
 import android.app.Service;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.IBinder;
 
 import androidx.annotation.Nullable;
@@ -30,8 +31,11 @@ public class AudioService extends Service {
 
             switch (Objects.requireNonNull(action)) {
                 case "PLAY":
-                    audioPlayer.play(intent.getStringExtra("path"));
-                    audioNotification.update("Reproduzindo...");
+                    Uri audioUri = intent.getParcelableExtra("uri");
+                    if (audioUri != null) {
+                        audioPlayer.play(audioUri);
+                        audioNotification.update("Reproduzindo...");
+                    }
                     break;
                 case "PAUSE":
                     audioPlayer.pause();

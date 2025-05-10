@@ -19,7 +19,7 @@ import com.manofern.audioserviceaula.R;
 public class MainActivity extends AppCompatActivity {
 
     private static final int PICK_AUDIO_REQUEST = 1;
-    private String selectedAudioUri = null;
+    private Uri selectedAudioUri = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
             if (selectedAudioUri != null) {
                 Intent intent = new Intent(MainActivity.this, AudioService.class);
                 intent.setAction("PLAY");
-                intent.putExtra("path", selectedAudioUri); // URI como string
+                intent.putExtra("uri", selectedAudioUri); // URI como Parcelable
                 startService(intent);
             } else {
                 Log.e("AudioServiceMainActivity", "Nenhuma faixa selecionada");
@@ -78,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == PICK_AUDIO_REQUEST && resultCode == RESULT_OK && data != null) {
             Uri uri = data.getData();
             if (uri != null) {
-                selectedAudioUri = uri.toString();
+                selectedAudioUri = uri;
                 Log.i("AudioServiceMainActivity", "URI selecionada: " + selectedAudioUri);
             }
         }
