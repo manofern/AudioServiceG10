@@ -56,7 +56,7 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.11.0")
     testImplementation("org.mockito:mockito-inline:5.2.0") // Necessário para mockStatic
-    testImplementation("org.robolectric:robolectric:4.6.1")
+    testImplementation("org.robolectric:robolectric:4.8")
 
     // Testes instrumentados Android
     androidTestImplementation("androidx.test.ext:junit:1.1.3")

@@ -13,8 +13,8 @@ import java.util.Objects;
 
 public class AudioService extends Service {
 
-    private AudioPlayer audioPlayer;
-    private AudioNotification audioNotification;
+    public AudioPlayer audioPlayer;
+    public AudioNotification audioNotification;
 
     @Override
     public void onCreate() {
