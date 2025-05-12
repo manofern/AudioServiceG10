@@ -17,6 +17,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.IOException;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -30,6 +33,9 @@ public class AudioPlayerTest {
 
     @Mock
     MediaSessionCompat mockMediaSession;
+
+    @Mock
+    Uri mockUri;
 
     private AudioPlayer audioPlayer;
 
@@ -60,6 +66,57 @@ public class AudioPlayerTest {
     }
 
     @Test
+    public void testPlayAudio_withPreviousPosition() throws IOException {
+        // Simula que o áudio já tocou e pausou antes, guardando uma posição
+        audioPlayer.play(mockUri); // Toca uma primeira vez para definir lastAudioUri
+        when(mockMediaPlayer.isPlaying()).thenReturn(true);
+        when(mockMediaPlayer.getCurrentPosition()).thenReturn(1000); // Simula uma posição salva
+        audioPlayer.pause(); // Pausa para salvar a currentPosition
+
+        // Configura o comportamento para a segunda chamada de play
+        doNothing().when(mockMediaPlayer).setDataSource(mockContext, mockUri);
+        doNothing().when(mockMediaPlayer).prepare();
+        doNothing().when(mockMediaPlayer).start();
+
+        // Executa o método play novamente
+        audioPlayer.play(mockUri); // Deveria usar a currentPosition salva
+
+        // Verifica as chamadas
+        verify(mockMediaPlayer, times(2)).reset(); // reset é chamado em cada play
+        verify(mockMediaPlayer, times(2)).setDataSource(mockContext, mockUri);
+        verify(mockMediaPlayer, times(2)).prepare();
+        verify(mockMediaPlayer).seekTo(1000); // Verifica se o seekTo foi chamado com a posição correta
+        verify(mockMediaPlayer, times(2)).start();
+    }
+
+    @Test
+    public void testPauseAudio_whenPlaying() {
+        // Configura o mock para simular que o áudio está tocando
+        when(mockMediaPlayer.isPlaying()).thenReturn(true);
+        when(mockMediaPlayer.getCurrentPosition()).thenReturn(5000); // Posição arbitrária
+
+        // Executa o método a ser testado
+        audioPlayer.pause();
+
+        // Verifica se getCurrentPosition e pause foram chamados no mockMediaPlayer
+        verify(mockMediaPlayer).getCurrentPosition();
+        verify(mockMediaPlayer).pause();
+    }
+
+    @Test
+    public void testPauseAudio_whenNotPlaying() {
+        // Configura o mock para simular que o áudio NÃO está tocando
+        when(mockMediaPlayer.isPlaying()).thenReturn(false);
+
+        // Executa o método a ser testado
+        audioPlayer.pause();
+
+        // Verifica que getCurrentPosition e pause NÃO foram chamados
+        verify(mockMediaPlayer, never()).getCurrentPosition();
+        verify(mockMediaPlayer, never()).pause();
+    }
+
+    @Test
     public void testPauseAudio() {
         when(mockMediaPlayer.isPlaying()).thenReturn(true);
         audioPlayer.pause();
@@ -85,6 +142,18 @@ public class AudioPlayerTest {
         when(mockMediaPlayer.isPlaying()).thenReturn(true);
         boolean isPlaying = audioPlayer.isPlaying();
         assert(isPlaying);
+    }
+
+    @Test
+    public void testIsPlaying_returnsTrue() {
+        when(mockMediaPlayer.isPlaying()).thenReturn(true);
+        assertTrue(audioPlayer.isPlaying());
+    }
+
+    @Test
+    public void testIsPlaying_returnsFalse() {
+        when(mockMediaPlayer.isPlaying()).thenReturn(false);
+        assertFalse(audioPlayer.isPlaying());
     }
 
     @Test

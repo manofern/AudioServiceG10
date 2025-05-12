@@ -82,6 +82,17 @@ public class AudioServiceTest {
     }
 
     @Test
+    public void testOnStartCommand_ActionPlay_WithoutUri() {
+        when(mockIntent.getAction()).thenReturn("PLAY");
+        // Não configura o extra "uri"
+
+        audioService.onStartCommand(mockIntent, 0, 0);
+
+        verify(mockAudioPlayer, never()).play(any(Uri.class));
+        verify(mockAudioNotification, never()).update("Reproduzindo...");
+    }
+
+    @Test
     public void testOnStartCommandPause() {
         // Simula a ação PAUSE
         when(mockIntent.getAction()).thenReturn("PAUSE");
@@ -118,8 +129,6 @@ public class AudioServiceTest {
         verify(audioService).stopForeground(true);
     }
 
-
-
     @Test
     public void testOnDestroy() {
         AudioPlayer mockAudioPlayer = mock(AudioPlayer.class);
@@ -145,4 +154,22 @@ public class AudioServiceTest {
         IBinder binder = audioService.onBind(mockIntent);
         assert(binder == null);
     }
+
+    @Test
+    public void testShowAudioPlayingNotification() {
+        when(mockIntent.getAction()).thenReturn("PLAY");
+        when(mockIntent.getParcelableExtra("uri")).thenReturn(mockUri);
+
+        audioService.onStartCommand(mockIntent, 0, 0);
+        verify(mockAudioNotification).update("Reproduzindo...");
+    }
+
+    @Test
+    public void testShowAudioPausedNotification() {
+        when(mockIntent.getAction()).thenReturn("PAUSE");
+
+        audioService.onStartCommand(mockIntent, 0, 0);
+        verify(mockAudioNotification).update("Pausado");
+    }
+
 }
